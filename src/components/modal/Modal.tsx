@@ -54,13 +54,13 @@ export const ModalForwardRef: React.ForwardRefRenderFunction<
   },
   ref
 ): JSX.Element => {
-  const { isOpen, toggleModal } = useModal(isInitiallyOpen)
+  const modalRootSelector = modalRoot || '.usa-modal-wrapper'
+
+  const { isOpen, toggleModal } = useModal(isInitiallyOpen, modalRootSelector)
   const [mounted, setMounted] = useState(false)
   const initialPaddingRef = useRef<string | undefined>(undefined)
   const tempPaddingRef = useRef<string | undefined>(undefined)
   const modalEl = useRef<HTMLDivElement>(null)
-
-  const modalRootSelector = modalRoot || '.usa-modal-wrapper'
 
   const NON_MODALS = `body > *:not(${modalRootSelector}):not([aria-hidden])`
   const NON_MODALS_HIDDEN = `[data-modal-hidden]`
@@ -85,6 +85,7 @@ export const ModalForwardRef: React.ForwardRefRenderFunction<
     body.classList.add('usa-js-modal--active')
 
     document.querySelectorAll(NON_MODALS).forEach((el) => {
+      if (el.id === 'modal-root') return;
       el.setAttribute('aria-hidden', 'true')
       el.setAttribute('data-modal-hidden', '')
     })

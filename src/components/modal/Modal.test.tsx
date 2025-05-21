@@ -480,7 +480,7 @@ describe('Modal component', () => {
       expect(screen.getByTestId('hidden')).toHaveAttribute('aria-hidden')
     })
 
-    it('stops event propagation if toggle modal is called from within a modal', async () => {
+    it('stops event propagation if toggle modal is called from within its modal', async () => {
       const modalRef = createRef<ModalRef>()
       const handleOpen = () => modalRef.current?.toggleModal(undefined, true)
 
@@ -495,6 +495,53 @@ describe('Modal component', () => {
       expect(modalRef.current?.modalIsOpen).toBe(true)
       userEvent.click(screen.getByText('Test modal'))
       expect(modalRef.current?.modalIsOpen).toBe(true)
+    })
+
+    it('allows nested modals', async () => {
+      const firstModalRef = createRef<ModalRef>()
+      const secondModalRef = createRef<ModalRef>()
+
+      renderWithModalRoot(
+        <div>
+          <ModalToggleButton modalRef={firstModalRef} opener={true}>
+            Open first modal
+          </ModalToggleButton>
+          
+        <Modal id="firstModal" modalRoot='#firstModal' ref={firstModalRef}>
+          Test modal
+          <ModalToggleButton modalRef={secondModalRef} opener={true}>
+            Open next modal
+          </ModalToggleButton>
+        </Modal>
+
+        <Modal id="secondModal" modalRoot='#secondModal' ref={secondModalRef}>
+          I am next
+        </Modal>
+        </div>
+
+      )
+
+      // open first modal
+      expect(firstModalRef.current?.modalIsOpen).toBe(false)
+      await userEvent.click(screen.getByRole('button', {name: 'Open first modal'}))
+      expect(firstModalRef.current?.modalIsOpen).toBe(true)
+      userEvent.click(screen.getByText('Test modal'))
+      expect(firstModalRef.current?.modalIsOpen).toBe(true)
+
+      // open second modal
+      expect(secondModalRef.current?.modalIsOpen).toBe(false)
+      await userEvent.click(screen.getByRole('button', {name: 'Open next modal'}))
+      expect(secondModalRef.current?.modalIsOpen).toBe(true)
+      expect(firstModalRef.current?.modalIsOpen).toBe(true)
+      userEvent.click(screen.getByText('I am next'))
+      expect(secondModalRef.current?.modalIsOpen).toBe(true)
+
+      // close the first modal
+      const overlay = screen.queryAllByTestId('modalOverlay')[1]
+      await userEvent.click(overlay)
+
+      expect(firstModalRef.current?.modalIsOpen).toBe(true)
+      expect(secondModalRef.current?.modalIsOpen).toBe(false)
     })
 
     describe('focusing', () => {
